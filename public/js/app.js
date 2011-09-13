@@ -1,10 +1,19 @@
-var App = SC.Application.create();
 
-$(document).ready(function(){
-  if (typeof(WebSocket) != 'undefined' || typeof(MozWebSocket)) {
+var Variety = SC.Application.create({
+
+  supported: typeof WebSocket !== 'undefined' || typeof MozWebSocket !== 'undefined'
+
+});
+
+V = Variety;
+
+SC.$(document).ready(function() {
+  if (V.supported) {
     $('#ask').show();
   } else {
-    $('#error').show();
+    SC.View.create({
+      templateName: 'unsupported'
+    }).append();
   }
   
   // join on enter

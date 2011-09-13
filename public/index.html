@@ -20,11 +20,14 @@
   <![endif]-->
 </head>
 <body>
+  <script type="text/x-handlebars" data-template-name="unsupported">
+    <div class="error">
+      This browser has no native WebSocket support. Use a WebKit nightly or Google Chrome.
+    </div>
+  </script>
+
   <img src="/images/logo.png" alt="Variety" />
-  <div id="error" class="bordered" style="display: none;">
-    This browser has no native WebSocket support.<br/>
-    Use a WebKit nightly or Google Chrome. 
-  </div>
+
   <div id="ask" class="bordered" style="display: none;">
     Name: <input type="text" id="name" /> <a href="#"><span class="join">Join!</span></a>
   </div>
