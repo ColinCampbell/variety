@@ -1,3 +1,5 @@
+var App = SC.Application.create();
+
 $(document).ready(function(){
   if (typeof(WebSocket) != 'undefined' || typeof(MozWebSocket)) {
     $('#ask').show();
