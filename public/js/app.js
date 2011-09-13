@@ -5,91 +5,118 @@ var Variety = SC.Application.create({
 
 });
 
-V = Variety;
+Variety.Message = SC.Object.extend({
 
-V.appController = SC.Object.create({
+  event: null,
+  content: null,
+  time: null,
+  user: null,
 
-  join: function() {
-    console.log("Join the user up", V.userController.name);
+  data: function() {
+    return {event: this.get('event'), content: this.get('content'), time: this.get('time'), user: this.get('user')};
+  }.property('event', 'content', 'time', 'user').cacheable(),
+
+  message: function() {
+    var event = this.get('event'),
+        content = this.get('content'),
+        matches;
+
+    if (event === 'message') {
+      matches = content.match(/^\s*[\/\\]me\s(.*)/);
+
+      if (matches) {
+        return this.get('user') + ' ' + matches[1];
+      }
+    }
+
+    return content;
+  }.property('event', 'content', 'user').cacheable()
+
+});
+
+Variety.SocketConnection = SC.Object.extend({
+
+  _ws: null,
+
+  host: window.location.host,
+
+  _onmessage: function(evt) {
+    var data = $.evalJSON(evt.data),
+        message;
+
+    if (typeof data !== 'object') { return; }
+
+    message = Variety.Message.create(data);
+    Variety.appController.receivedMessage(message);
+  },
+
+  join: function(name) {
+    var host = this.get('host'),
+        SocketKlass = typeof MozWebSocket !== 'undefined' ? MozWebSocket : WebSocket,
+        ws = new SocketKlass('ws://' + host + '/websocket');
+
+    ws.onmessage = this._onmessage;
+
+    ws.onopen = function() {
+      ws.send({action: 'join', user: name});
+    };
+
+    this._ws = ws;
+  },
+
+  sendMessage: function(message) {
+    this._ws.send(message.get('data'));
   }
 
 });
 
-V.userController = SC.Object.create({
+Variety.appController = SC.Object.create({
+
+  join: function() {
+    Variety.socketConnection.join(Variety.userController.get('name'));
+  },
+
+  receivedMessage: function() {
+    Variety.messagesList.pushObject(message);
+  }
+
+});
+
+Variety.messagesList = SC.ArrayController.create({
+
+  content: []
+
+});
+
+Variety.userController = SC.Object.create({
 
   name: null
 
 });
 
-V.unsupportedView = SC.View.create({
+Variety.unsupportedView = SC.View.create({
   classNames: ['unsupported'],
   templateName: 'unsupported'
 });
 
-V.joinView = SC.View.create({
+Variety.joinView = SC.View.create({
   classNames: ['join'],
   templateName: 'join'
 });
 
 SC.$(document).ready(function() {
-  if (V.supported) {
-    V.joinView.append();
+  $('#channel form').submit(function(event) {
+    event.preventDefault();
+    var input = $(this).find(':input');
+    var msg = input.val();
+    ws.send($.toJSON({ action: 'message', message: msg }));
+    input.val('');
+  });
+
+  if (Variety.supported) {
+    Variety.socketConnection = Variety.SocketConnection.create();
+    Variety.joinView.append();
   } else {
-    V.unsupportedView.append();
-  }
-
-  function join(name) {
-    var host = window.location.host.split(':')[0];
-
-    var SocketKlass = "MozWebSocket" in window ? MozWebSocket : WebSocket;
-    var ws = new SocketKlass('ws://' + window.location.host + '/websocket');
-
-    var container = $('div#msgs');
-    ws.onmessage = function(evt) {
-      var obj = $.evalJSON(evt.data);
-      if (typeof obj != 'object') return;
-
-      var action = obj['action'];
-      var struct = container.find('li.' + action + ':first');
-      if (struct.length < 1) {
-        console.log("Could not handle: " + evt.data);
-        return;
-      }
-      
-      var msg = struct.clone();
-      msg.find('.time').text((new Date()).toString("HH:mm:ss"));
-
-      if (action == 'message') {
-        var matches;
-        if (matches = obj['message'].match(/^\s*[\/\\]me\s(.*)/)) {
-          msg.find('.user').text(obj['user'] + ' ' + matches[1]);
-          msg.find('.user').css('font-weight', 'bold');
-        } else {
-          msg.find('.user').text(obj['user']);
-          msg.find('.message').text(': ' + obj['message']);
-        }
-      } else if (action == 'control') {
-        msg.find('.user').text(obj['user']);
-        msg.find('.message').text(obj['message']);
-        msg.addClass('control');
-      }
-      
-      if (obj['user'] == name) msg.find('.user').addClass('self');
-      container.find('ul').append(msg.show());
-      container.scrollTop(container.find('ul').innerHeight());
-    }
-    
-    $('#channel form').submit(function(event) {
-      event.preventDefault();
-      var input = $(this).find(':input');
-      var msg = input.val();
-      ws.send($.toJSON({ action: 'message', message: msg }));
-      input.val('');
-    });
-    
-    // send name when joining
-    ws.onopen = function() {
-      ws.send($.toJSON({ action: 'join', user: name }));
-    }
+    Variety.unsupportedView.append();
   }
 });
