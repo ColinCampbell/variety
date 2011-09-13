@@ -20,6 +20,16 @@
   <![endif]-->
 </head>
 <body>
+  <script type="text/x-handlebars" data-template-name="join">
+    Welcome to Variety!
+
+    {{view SC.TextField valueBinding="V.userController.name" placeholder="Name"}}
+
+    {{#view SC.Button target="V.appController" action="join"}}
+      Join
+    {{/view}}
+  </script>
+
   <script type="text/x-handlebars" data-template-name="unsupported">
     <div class="error">
       This browser has no native WebSocket support. Use a WebKit nightly or Google Chrome.
@@ -28,9 +38,6 @@
 
   <img src="/images/logo.png" alt="Variety" />
 
-  <div id="ask" class="bordered" style="display: none;">
-    Name: <input type="text" id="name" /> <a href="#"><span class="join">Join!</span></a>
-  </div>
   <div id="channel" class="bordered" style="display: none;">
     <div id="msgs">
       <ul>

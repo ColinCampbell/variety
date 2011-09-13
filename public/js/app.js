@@ -7,29 +7,36 @@ var Variety = SC.Application.create({
 
 V = Variety;
 
+V.appController = SC.Object.create({
+
+  join: function() {
+    console.log("Join the user up", V.userController.name);
+  }
+
+});
+
+V.userController = SC.Object.create({
+
+  name: null
+
+});
+
+V.unsupportedView = SC.View.create({
+  classNames: ['unsupported'],
+  templateName: 'unsupported'
+});
+
+V.joinView = SC.View.create({
+  classNames: ['join'],
+  templateName: 'join'
+});
+
 SC.$(document).ready(function() {
   if (V.supported) {
-    $('#ask').show();
+    V.joinView.append();
   } else {
-    SC.View.create({
-      templateName: 'unsupported'
-    }).append();
+    V.unsupportedView.append();
   }
-  
-  // join on enter
-  $('#ask input').keydown(function(event) {
-    if (event.keyCode == 13) {
-      $('#ask a').click();
-    }
-  })
-  
-  // join on click
-  $('#ask a').click(function() {
-    join($('#ask input').val());
-    $('#ask').hide();
-    $('#channel').show();
-    $('input#message').focus();
-  });
 
   function join(name) {
     var host = window.location.host.split(':')[0];
